@@ -1,4 +1,0 @@
-neurodynamics
-=============
-
-Computational Neurodynamics Coursework

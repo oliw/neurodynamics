@@ -44,7 +44,7 @@ for i=1:L
 end
 
 layer{1}.S{1} = zeros(EXCITATORY_NEURONS);
-layer{2}.S{1} = zeros(EXCITATORY_NEURONS, INHIBITORY_NEURONS);
+layer{2}.S{1} = zeros(INHIBITORY_NEURONS, EXCITATORY_NEURONS);
 
 % Each module contains 1000 randomly assigned directed inner connections (before
 % rewiring)
@@ -61,7 +61,7 @@ layer{1}.S{1} = rewire(layer{1}.S{1}, p, MODULES, EXCITATORY_NEURONS_PER_MODULE)
 % Each inhibatoryNeuron projects to every neuron in the whole network.
 % Connections from inhibitory neurons all have a weight between -1 and 0.
 layer{2}.S{2} = -rand(INHIBITORY_NEURONS);
-layer{1}.S{2} = -rand(INHIBITORY_NEURONS, EXCITATORY_NEURONS);
+layer{1}.S{2} = -rand(EXCITATORY_NEURONS,INHIBITORY_NEURONS);
 
 for module=1:MODULES
     randomList = randperm(EXCITATORY_NEURONS_PER_MODULE);
@@ -79,8 +79,8 @@ layer{2}.factor{2} = 1;
 
 % Set conduction delay
 layer{1}.delay{1} = 20.*rand(EXCITATORY_NEURONS,EXCITATORY_NEURONS);
-layer{1}.delay{2} = ones(INHIBITORY_NEURONS, EXCITATORY_NEURONS);
-layer{2}.delay{1} = ones(EXCITATORY_NEURONS, INHIBITORY_NEURONS);
+layer{1}.delay{2} = ones(EXCITATORY_NEURONS,INHIBITORY_NEURONS);
+layer{2}.delay{1} = ones(INHIBITORY_NEURONS,EXCITATORY_NEURONS);
 layer{2}.delay{2} = ones(INHIBITORY_NEURONS, INHIBITORY_NEURONS);
 
 

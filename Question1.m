@@ -1,4 +1,4 @@
-function [layer ] = Question1( p )
+function [layer, v1, v2, u1, u2 ] = Question1( p )
 %QUESTION1 Summary of this function goes here
 %   Detailed explanation goes here
 % CONSTANTS
@@ -27,7 +27,7 @@ layer{1}.d = 8-6*r.^2; % d's are all different thanks to r
 % Layer 2 (Inhibatory neurons) Fast Spiking
 r = rand(INHIBITORY_NEURONS,1);
 layer{2}.rows = INHIBITORY_NEURONS;
-layer{2}.columns = INHIBITORY_NEURONS;
+layer{2}.columns = 1;
 layer{2}.a = 0.02*ones(INHIBITORY_NEURONS,1); % Set every a of each neuron to 0.02
 layer{2}.b = 0.25*ones(INHIBITORY_NEURONS,1); % b is the same for everyone
 layer{2}.c = -65+15*r.^2; %  c's are all slightly different thanks to r
@@ -43,8 +43,9 @@ for i=1:L
    end
 end
 
+% Initialize connections from excitatory neurons
 layer{1}.S{1} = zeros(EXCITATORY_NEURONS);
-layer{2}.S{1} = zeros(EXCITATORY_NEURONS, INHIBITORY_NEURONS);
+layer{2}.S{1} = zeros(INHIBITORY_NEURONS, EXCITATORY_NEURONS);
 
 % Each module contains 1000 randomly assigned directed inner connections (before
 % rewiring)
@@ -61,7 +62,7 @@ layer{1}.S{1} = rewire(layer{1}.S{1}, p, MODULES, EXCITATORY_NEURONS_PER_MODULE)
 % Each inhibatoryNeuron projects to every neuron in the whole network.
 % Connections from inhibitory neurons all have a weight between -1 and 0.
 layer{2}.S{2} = -rand(INHIBITORY_NEURONS);
-layer{1}.S{2} = -rand(INHIBITORY_NEURONS, EXCITATORY_NEURONS);
+layer{1}.S{2} = -rand(EXCITATORY_NEURONS,INHIBITORY_NEURONS);
 
 for module=1:MODULES
     randomList = randperm(EXCITATORY_NEURONS_PER_MODULE);
@@ -78,15 +79,44 @@ layer{2}.factor{1} = 50;
 layer{2}.factor{2} = 1;
 
 % Set conduction delay
-layer{1}.delay{1} = 20.*rand(EXCITATORY_NEURONS,EXCITATORY_NEURONS);
-layer{1}.delay{2} = ones(INHIBITORY_NEURONS, EXCITATORY_NEURONS);
-layer{2}.delay{1} = ones(EXCITATORY_NEURONS, INHIBITORY_NEURONS);
+layer{1}.delay{1} = 20*rand(EXCITATORY_NEURONS,EXCITATORY_NEURONS);
+layer{1}.delay{2} = ones(EXCITATORY_NEURONS,INHIBITORY_NEURONS);
+layer{2}.delay{1} = ones(INHIBITORY_NEURONS,EXCITATORY_NEURONS);
 layer{2}.delay{2} = ones(INHIBITORY_NEURONS, INHIBITORY_NEURONS);
 
 
-% NEXT TODO: Replicate the firing
+% SIMULATE
 
+Tmax = 1000;
+Ib = 15;
+Dmax = 10; % maximum propagation delay in milliseconds. The time it takes to go from one neuron to another.
 
+% Initialise layers with intial values of v and u and notes of which are
+% firing
+for lr=1:length(layer)
+   layer{lr}.v = -65*ones(layer{lr}.rows,layer{lr}.columns); % Every neuron in the layer lr is given an intial voltage of -65
+   layer{lr}.u = layer{lr}.b.*layer{lr}.v; % Initial value of u
+   layer{lr}.firings = []; % None of the neurons are firing?
+end
+
+for t=1:Tmax
+    
+   % Deliver a constant base current to layer 1
+   layer{1}.I = Ib*ones(EXCITATORY_NEURONS,1); % Layer 1 always has a constant input of current
+   layer{2}.I = Ib*ones(INHIBITORY_NEURONS,1); % Layer 2 always has a constant input of current
+      
+   % Update all the neurons
+   for lr=1:length(layer)
+      layer = IzNeuronUpdate(layer,lr,t,Dmax); % Takes the neurons, the layer index we want to update, the time, and the propagation delay. It calculates the new v and u values 
+   end
+   
+   v1(t,1:EXCITATORY_NEURONS) = layer{1}.v; % Update the columns 1->N1*M1 at row t with the current voltages of layer 1
+   v2(t,1:INHIBITORY_NEURONS) = layer{2}.v;
+   
+   u1(t,1:EXCITATORY_NEURONS) = layer{1}.u;
+   u2(t,1:INHIBITORY_NEURONS) = layer{2}.u;
+    
+end
 
 
 end
@@ -135,50 +165,4 @@ for module=1:modules
     end
 end
 
-end
-
-function layer = IzNeuronUpdate(layer,t,Dmax)
-% Updates membrane potential v and reset rate u for neurons in layer 1
-% using Izhikevich's neuron model and the Euler method. Dmax is the maximum
-% conduction delay
-i = 1;
-dt = 0.2; % Euler method step size
-% Calculate current from incoming spikes
-for j=1:length(layer)
-   S = layer{i}.S{j};
-   if ~isempty(S)
-      firings = layer{j}.firings;
-      if ~isempty(firings)
-         % Find incoming spikes (taking account of propagation delays)
-         delay = layer{i}.delay{j};
-         F = layer{i}.factor{j};
-         % Sum current from incoming spikes
-         k = size(firings,1);
-         while (k>0 && firings(k,1)>t-(Dmax+1))
-            spikes = (delay(:,firings(k,2))==t-firings(k,1));
-            if ~isempty(layer{i}.I(spikes))
-               layer{i}.I(spikes) = layer{i}.I(spikes)+S(spikes,firings(k,2))*F;
-            end
-            k = k-1;
-         end;
-         % Don't let I go below zero (shunting inhibition)
-         % layer{i}.I = layer{i}.I.*(layer{i}.I > 0);
-      end
-   end
-end
-
-% Update v and u using Izhikevich's model in increments of dt
-for k=1:1/dt
-   v = layer{i}.v;
-   u = layer{i}.u;
-   layer{i}.v = v+(dt*(0.04*v.^2+5*v+140-u+layer{i}.I));
-   layer{i}.u = u+(dt*(layer{i}.a.*(layer{i}.b.*v-u)));
-   % Reset neurons that have spiked
-   fired = find(layer{i}.v>=30); % indices of spikes
-   if ~isempty(fired)
-      layer{i}.firings = [layer{i}.firings ; t+0*fired, fired];
-      layer{i}.v(fired) = layer{i}.c(fired);
-      layer{i}.u(fired) = layer{i}.u(fired)+layer{i}.d(fired);
-   end
-end
 end

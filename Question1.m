@@ -52,64 +52,37 @@ layer{2}.S{1} = zeros(EXCITATORY_NEURONS, INHIBITORY_NEURONS);
 for module=1:MODULES
     firstNeuron = (module-1)*EXCITATORY_NEURONS_PER_MODULE+1;
     lastNeuron = module*EXCITATORY_NEURONS_PER_MODULE;
+    % Connections between excitatory neurons have weight 1
     layer{1}.S{1}(firstNeuron:lastNeuron,firstNeuron:lastNeuron) = randomWiring(RANDOM_WIRING_PER_MODULE, EXCITATORY_NEURONS_PER_MODULE);
 end
 % Rewiring with probability p
 layer{1}.S{1} = rewire(layer{1}.S{1}, p, MODULES, EXCITATORY_NEURONS_PER_MODULE);
 
 % Each inhibatoryNeuron projects to every neuron in the whole network.
-layer{2}.S{2} = ones(INHIBITORY_NEURONS);
-layer{1}.S{2} = ones(INHIBITORY_NEURONS, EXCITATORY_NEURONS);
+% Connections from inhibitory neurons all have a weight between -1 and 0.
+layer{2}.S{2} = -rand(INHIBITORY_NEURONS);
+layer{1}.S{2} = -rand(INHIBITORY_NEURONS, EXCITATORY_NEURONS);
 
 for module=1:MODULES
     randomList = randperm(EXCITATORY_NEURONS_PER_MODULE);
     chosenExNeurons = randomList(1:4) + (module-1)*EXCITATORY_NEURONS_PER_MODULE;
-    layer{2}.S{1}(chosenExNeurons,:) = 1;
+    % Any Excitatory to Inhibatory connections have a random weight between 0
+    % and 1
+    layer{2}.S{1}(chosenExNeurons,:) = rand;
 end
 
-% Each connection has a weight, scaling factor, projecton pattern(?),
-% conduction delay
+% Set scaling factors
+layer{1}.factor{1} = 17;
+layer{1}.factor{2} = 2;
+layer{2}.factor{1} = 50;
+layer{2}.factor{2} = 1;
 
-% Build Weight, Scaling Factor and ConductionDelay
-% Weight = zeros(size(C));
-% ScalingFactor = zeros(size(C));
-% ConductionDelay = zeros(size(C));
-% for i=1:EXCITATORY_NEURONS
-%    for j=1:EXCITATORY_NEURONS
-%        if C(i,j)==1
-%           Weight(i,j) =1;
-%           ScalingFactor(i,j) = 17;
-%           ConductionDelay(i,j) = randi([0,20]);
-%        end
-%    end
-% end
-% for i=1:EXCITATORY_NEURONS
-%    for j=EXCITATORY_NEURONS+1:NEURONS
-%        if C(i,j)==1
-%           Weight(i,j) = rand;
-%           ScalingFactor(i,j) = 50;
-%           ConductionDelay(i,j) = 1;
-%        end
-%    end
-% end    
-% for i=EXCITATORY_NEURONS+1:NEURONS
-%    for j=1:EXCITATORY_NEURONS
-%       if C(i,j)==1
-%           Weight(i,j) =-rand;
-%           ScalingFactor(i,j) = 2;
-%           ConductionDelay(i,j) = 1;
-%       end
-%    end
-% end
-% for i=EXCITATORY_NEURONS+1:NEURONS
-%    for j=EXCITATORY_NEURONS+1:NEURONS
-%       if C(i,j)==1
-%           Weight(i,j) =-rand;
-%           ScalingFactor(i,j) = 1;
-%           ConductionDelay(i,j) = 1;
-%       end
-%    end
-% end
+% Set conduction delay
+layer{1}.delay{1} = 20.*rand(EXCITATORY_NEURONS,EXCITATORY_NEURONS);
+layer{1}.delay{2} = ones(INHIBITORY_NEURONS, EXCITATORY_NEURONS);
+layer{2}.delay{1} = ones(EXCITATORY_NEURONS, INHIBITORY_NEURONS);
+layer{2}.delay{2} = ones(INHIBITORY_NEURONS, INHIBITORY_NEURONS);
+
 
 % NEXT TODO: Replicate the firing
 

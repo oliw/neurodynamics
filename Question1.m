@@ -61,15 +61,15 @@ layer{1}.S{1} = rewire(layer{1}.S{1}, p, MODULES, EXCITATORY_NEURONS_PER_MODULE)
 
 % Each inhibatoryNeuron projects to every neuron in the whole network.
 % Connections from inhibitory neurons all have a weight between -1 and 0.
-layer{2}.S{2} = -rand(INHIBITORY_NEURONS);
-layer{1}.S{2} = -rand(EXCITATORY_NEURONS,INHIBITORY_NEURONS);
+layer{2}.S{2} = ones(INHIBITORY_NEURONS);%-rand(INHIBITORY_NEURONS);
+layer{1}.S{2} = ones(EXCITATORY_NEURONS,INHIBITORY_NEURONS);%-rand(EXCITATORY_NEURONS,INHIBITORY_NEURONS);
 
 for module=1:MODULES
     randomList = randperm(EXCITATORY_NEURONS_PER_MODULE);
     chosenExNeurons = randomList(1:4) + (module-1)*EXCITATORY_NEURONS_PER_MODULE;
     % Any Excitatory to Inhibatory connections have a random weight between 0
     % and 1
-    layer{2}.S{1}(chosenExNeurons,:) = rand;
+    layer{2}.S{1}(chosenExNeurons,:) = 1; %rand;
 end
 
 % Set scaling factors

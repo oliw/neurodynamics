@@ -1,89 +1,115 @@
-function [C ] = Question1( p )
+function [layer ] = Question1( p )
 %QUESTION1 Summary of this function goes here
 %   Detailed explanation goes here
+% CONSTANTS
 
 % Build small-world modular networks of Izhikevich neurons
 
-modules = 8;
-excitoryNeuronsPerModule = 100;
-inhibatoryNeurons = 200;
-randomWiringsPerModule = 1000;
+MODULES = 8;
+EXCITATORY_NEURONS_PER_MODULE = 100;
+RANDOM_WIRING_PER_MODULE = 1000;
 
-% Initialise connectivity matrix
-C = zeros(modules*excitoryNeuronsPerModule+inhibatoryNeurons);
+EXCITATORY_NEURONS = MODULES*EXCITATORY_NEURONS_PER_MODULE;
+INHIBITORY_NEURONS = 200;
+NEURONS = EXCITATORY_NEURONS + INHIBITORY_NEURONS;
+
+% Build two layer structure
+
+% Layer 1 (Exitatory neurons) Regular Spiking
+r = rand(EXCITATORY_NEURONS,1);
+layer{1}.rows = EXCITATORY_NEURONS;
+layer{1}.columns = 1;
+layer{1}.a = 0.02*ones(EXCITATORY_NEURONS,1); % Set every a of each neuron to 0.02
+layer{1}.b = 0.2*ones(EXCITATORY_NEURONS,1); % b is the same for everyone
+layer{1}.c = -65+15*r.^2; %  c's are all slightly different thanks to r
+layer{1}.d = 8-6*r.^2; % d's are all different thanks to r
+
+% Layer 2 (Inhibatory neurons) Fast Spiking
+r = rand(INHIBITORY_NEURONS,1);
+layer{2}.rows = INHIBITORY_NEURONS;
+layer{2}.columns = INHIBITORY_NEURONS;
+layer{2}.a = 0.02*ones(INHIBITORY_NEURONS,1); % Set every a of each neuron to 0.02
+layer{2}.b = 0.25*ones(INHIBITORY_NEURONS,1); % b is the same for everyone
+layer{2}.c = -65+15*r.^2; %  c's are all slightly different thanks to r
+layer{2}.d = 2-6*r.^2; % d's are all different thanks to r
+
+% Clear connectivity matrices
+L = length(layer);
+for i=1:L
+   for j=1:L
+      layer{i}.S{j} = [];
+      layer{i}.factor{j} = [];
+      layer{i}.delay{j} = [];
+   end
+end
+
+layer{1}.S{1} = zeros(EXCITATORY_NEURONS);
+layer{2}.S{1} = zeros(EXCITATORY_NEURONS, INHIBITORY_NEURONS);
 
 % Each module contains 1000 randomly assigned directed inner connections (before
 % rewiring)
 % TODO Some neurons may be completely cut off, is this ok?
-for module=1:modules
-    firstNeuron = (module-1)*excitoryNeuronsPerModule+1;
-    lastNeuron = module*excitoryNeuronsPerModule;
-    C(firstNeuron:lastNeuron,firstNeuron:lastNeuron) = randomWiring(randomWiringsPerModule, excitoryNeuronsPerModule);
+for module=1:MODULES
+    firstNeuron = (module-1)*EXCITATORY_NEURONS_PER_MODULE+1;
+    lastNeuron = module*EXCITATORY_NEURONS_PER_MODULE;
+    layer{1}.S{1}(firstNeuron:lastNeuron,firstNeuron:lastNeuron) = randomWiring(RANDOM_WIRING_PER_MODULE, EXCITATORY_NEURONS_PER_MODULE);
 end
-
 % Rewiring with probability p
-
+layer{1}.S{1} = rewire(layer{1}.S{1}, p, MODULES, EXCITATORY_NEURONS_PER_MODULE);
 
 % Each inhibatoryNeuron projects to every neuron in the whole network.
-% TODO At the moment an inhibatory neuron inhibits itself
-C(modules*excitoryNeuronsPerModule+1:size(C,2),:) = 1;
+layer{2}.S{2} = ones(INHIBITORY_NEURONS);
+layer{1}.S{2} = ones(INHIBITORY_NEURONS, EXCITATORY_NEURONS);
 
-% Each inhibatory neuron recieves input from FOUR excitatory neurons
-% which must all come from the same module
-for module=1:modules
-    randomList = randperm(excitoryNeuronsPerModule);
-    randomList = randomList(1:4);
-    randomList = randomList + (module-1)*excitoryNeuronsPerModule;
-    C(randomList,801:1000) = 1;
+for module=1:MODULES
+    randomList = randperm(EXCITATORY_NEURONS_PER_MODULE);
+    chosenExNeurons = randomList(1:4) + (module-1)*EXCITATORY_NEURONS_PER_MODULE;
+    layer{2}.S{1}(chosenExNeurons,:) = 1;
 end
 
-C(1:800,1:800) = rewire(C(1:800,1:800), p, modules, excitoryNeuronsPerModule);
-
-% Each neuron has a background chance of firing with lambda = 0.01
-
-% Each connection has a weight, scaling facotr, projecton pattern(?),
+% Each connection has a weight, scaling factor, projecton pattern(?),
 % conduction delay
 
 % Build Weight, Scaling Factor and ConductionDelay
-Weight = zeros(size(C));
-ScalingFactor = zeros(size(C));
-ConductionDelay = zeros(size(C));
-for i=1:800
-   for j=1:800
-       if C(i,j)==1
-          Weight(i,j) =1;
-          ScalingFactor(i,j) = 17;
-          ConductionDelay(i,j) = randi([0,20]);
-       end
-   end
-end
-for i=1:800
-   for j=801:1000
-       if C(i,j)==1
-          Weight(i,j) = rand;
-          ScalingFactor(i,j) = 50;
-          ConductionDelay(i,j) = 1;
-       end
-   end
-end    
-for i=801:1000
-   for j=1:800
-      if C(i,j)==1
-          Weight(i,j) =-rand;
-          ScalingFactor(i,j) = 2;
-          ConductionDelay(i,j) = 1;
-      end
-   end
-end
-for i=801:1000
-   for j=801:1000
-      if C(i,j)==1
-          Weight(i,j) =-rand;
-          ScalingFactor(i,j) = 1;
-          ConductionDelay(i,j) = 1;
-      end
-   end
-end
+% Weight = zeros(size(C));
+% ScalingFactor = zeros(size(C));
+% ConductionDelay = zeros(size(C));
+% for i=1:EXCITATORY_NEURONS
+%    for j=1:EXCITATORY_NEURONS
+%        if C(i,j)==1
+%           Weight(i,j) =1;
+%           ScalingFactor(i,j) = 17;
+%           ConductionDelay(i,j) = randi([0,20]);
+%        end
+%    end
+% end
+% for i=1:EXCITATORY_NEURONS
+%    for j=EXCITATORY_NEURONS+1:NEURONS
+%        if C(i,j)==1
+%           Weight(i,j) = rand;
+%           ScalingFactor(i,j) = 50;
+%           ConductionDelay(i,j) = 1;
+%        end
+%    end
+% end    
+% for i=EXCITATORY_NEURONS+1:NEURONS
+%    for j=1:EXCITATORY_NEURONS
+%       if C(i,j)==1
+%           Weight(i,j) =-rand;
+%           ScalingFactor(i,j) = 2;
+%           ConductionDelay(i,j) = 1;
+%       end
+%    end
+% end
+% for i=EXCITATORY_NEURONS+1:NEURONS
+%    for j=EXCITATORY_NEURONS+1:NEURONS
+%       if C(i,j)==1
+%           Weight(i,j) =-rand;
+%           ScalingFactor(i,j) = 1;
+%           ConductionDelay(i,j) = 1;
+%       end
+%    end
+% end
 
 % NEXT TODO: Replicate the firing
 
@@ -109,7 +135,6 @@ end
 
 % Pre: oldmatrix contains just the excitatory modules 
 function matrix = rewire(oldmatrix, p, modules, excitoryNeuronsPerModule)
-
 matrix = zeros(size(oldmatrix));
 for module=1:modules
     firstNeuron = (module-1)*excitoryNeuronsPerModule+1;
@@ -137,4 +162,50 @@ for module=1:modules
     end
 end
 
+end
+
+function layer = IzNeuronUpdate(layer,t,Dmax)
+% Updates membrane potential v and reset rate u for neurons in layer 1
+% using Izhikevich's neuron model and the Euler method. Dmax is the maximum
+% conduction delay
+i = 1;
+dt = 0.2; % Euler method step size
+% Calculate current from incoming spikes
+for j=1:length(layer)
+   S = layer{i}.S{j};
+   if ~isempty(S)
+      firings = layer{j}.firings;
+      if ~isempty(firings)
+         % Find incoming spikes (taking account of propagation delays)
+         delay = layer{i}.delay{j};
+         F = layer{i}.factor{j};
+         % Sum current from incoming spikes
+         k = size(firings,1);
+         while (k>0 && firings(k,1)>t-(Dmax+1))
+            spikes = (delay(:,firings(k,2))==t-firings(k,1));
+            if ~isempty(layer{i}.I(spikes))
+               layer{i}.I(spikes) = layer{i}.I(spikes)+S(spikes,firings(k,2))*F;
+            end
+            k = k-1;
+         end;
+         % Don't let I go below zero (shunting inhibition)
+         % layer{i}.I = layer{i}.I.*(layer{i}.I > 0);
+      end
+   end
+end
+
+% Update v and u using Izhikevich's model in increments of dt
+for k=1:1/dt
+   v = layer{i}.v;
+   u = layer{i}.u;
+   layer{i}.v = v+(dt*(0.04*v.^2+5*v+140-u+layer{i}.I));
+   layer{i}.u = u+(dt*(layer{i}.a.*(layer{i}.b.*v-u)));
+   % Reset neurons that have spiked
+   fired = find(layer{i}.v>=30); % indices of spikes
+   if ~isempty(fired)
+      layer{i}.firings = [layer{i}.firings ; t+0*fired, fired];
+      layer{i}.v(fired) = layer{i}.c(fired);
+      layer{i}.u(fired) = layer{i}.u(fired)+layer{i}.d(fired);
+   end
+end
 end

@@ -1,4 +1,4 @@
-function [layer, v1, v2, u1, u2 ] = Question1( p )
+function [layer] = Question1( p )
 %QUESTION1 Summary of this function goes here
 %   Detailed explanation goes here
 % CONSTANTS
@@ -59,17 +59,18 @@ end
 % Rewiring with probability p
 layer{1}.S{1} = rewire(layer{1}.S{1}, p, MODULES, EXCITATORY_NEURONS_PER_MODULE);
 
-% Each inhibatoryNeuron projects to every neuron in the whole network.
+% Each inhibitory neuron projects to every neuron in the whole network.
 % Connections from inhibitory neurons all have a weight between -1 and 0.
-layer{2}.S{2} = ones(INHIBITORY_NEURONS);%-rand(INHIBITORY_NEURONS);
-layer{1}.S{2} = ones(EXCITATORY_NEURONS,INHIBITORY_NEURONS);%-rand(EXCITATORY_NEURONS,INHIBITORY_NEURONS);
+layer{2}.S{2} = -rand(INHIBITORY_NEURONS);
+layer{1}.S{2} = -rand(EXCITATORY_NEURONS,INHIBITORY_NEURONS);
 
-for module=1:MODULES
+% Each inhibitory neuron has connections from FOUR excitory neurons
+% All must come from the same module
+for ineuron=1:INHIBITORY_NEURONS
+    module = randi([1,MODULES]);
     randomList = randperm(EXCITATORY_NEURONS_PER_MODULE);
     chosenExNeurons = randomList(1:4) + (module-1)*EXCITATORY_NEURONS_PER_MODULE;
-    % Any Excitatory to Inhibatory connections have a random weight between 0
-    % and 1
-    layer{2}.S{1}(chosenExNeurons,:) = 1; %rand;
+    layer{2}.S{1}(ineuron, chosenExNeurons) = rand;
 end
 
 % Set scaling factors
@@ -91,6 +92,11 @@ Tmax = 1000;
 Ib = 15;
 Dmax = 10; % maximum propagation delay in milliseconds. The time it takes to go from one neuron to another.
 
+% Generate a random time for each neuron to fire
+% A neuron will only background fire once in a second
+layer{1}.backgroundFire = randi([1, 1000], EXCITATORY_NEURONS,1);
+layer{2}.backgroundFire = randi([1,1000], INHIBITORY_NEURONS, 1);
+
 % Initialise layers with intial values of v and u and notes of which are
 % firing
 for lr=1:length(layer)
@@ -101,6 +107,15 @@ end
 
 for t=1:Tmax
     
+%    layer{1}.I = zeros(EXCITATORY_NEURONS,1);
+%    layer{2}.I = zeros(INHIBITORY_NEURONS,1);
+%    layer{1}.I(layer{1}.backgroundFire(:)==t) = Ib; 
+%    layer{2}.I(layer{2}.backgroundFire(:)==t) = Ib; 
+%    
+%    if t==1
+%     layer{1}.I = Ib*ones(EXCITATORY_NEURONS,1); % Layer 1 always has a constant input of current 
+%     layer{2}.I = Ib*ones(INHIBITORY_NEURONS,1); % Layer 2 always has a constant input of current
+%    end
    % Deliver a constant base current to layer 1
    layer{1}.I = Ib*ones(EXCITATORY_NEURONS,1); % Layer 1 always has a constant input of current
    layer{2}.I = Ib*ones(INHIBITORY_NEURONS,1); % Layer 2 always has a constant input of current
@@ -109,12 +124,6 @@ for t=1:Tmax
    for lr=1:length(layer)
       layer = IzNeuronUpdate(layer,lr,t,Dmax); % Takes the neurons, the layer index we want to update, the time, and the propagation delay. It calculates the new v and u values 
    end
-   
-   v1(t,1:EXCITATORY_NEURONS) = layer{1}.v; % Update the columns 1->N1*M1 at row t with the current voltages of layer 1
-   v2(t,1:INHIBITORY_NEURONS) = layer{2}.v;
-   
-   u1(t,1:EXCITATORY_NEURONS) = layer{1}.u;
-   u2(t,1:INHIBITORY_NEURONS) = layer{2}.u;
     
 end
 

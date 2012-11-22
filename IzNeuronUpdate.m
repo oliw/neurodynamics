@@ -15,9 +15,14 @@ for j=1:length(layer)
          F = layer{i}.factor{j};
          % Sum current from incoming spikes
          k = size(firings,1);
+         % updates all neurons that have fired within t-(Dmax+1)
          while (k>0 && firings(k,1)>t-(Dmax+1))
+            % spikes contains all neurons that are able to fire now as the
+            % time t-firings(k, 1))
             spikes = (delay(:,firings(k,2))==t-firings(k,1));
             if ~isempty(layer{i}.I(spikes))
+               % at least one neuron receives current at this point,
+               % update neurons that receive current
                layer{i}.I(spikes) = layer{i}.I(spikes)+S(spikes,firings(k,2))*F;
             end
             k = k-1;

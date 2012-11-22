@@ -28,10 +28,10 @@ layer{1}.d = 8-6*r.^2; % d's are all different thanks to r
 r = rand(INHIBITORY_NEURONS,1);
 layer{2}.rows = INHIBITORY_NEURONS;
 layer{2}.columns = 1;
-layer{2}.a = 0.02*ones(INHIBITORY_NEURONS,1); % Set every a of each neuron to 0.02
-layer{2}.b = 0.25*ones(INHIBITORY_NEURONS,1); % b is the same for everyone
-layer{2}.c = -65+15*r.^2; %  c's are all slightly different thanks to r
-layer{2}.d = 2-6*r.^2; % d's are all different thanks to r
+layer{2}.a = 0.02+0.08*r;
+layer{2}.b = 0.25-0.05*r; 
+layer{2}.c = -65*ones(INHIBITORY_NEURONS,1); 
+layer{2}.d = 2*ones(INHIBITORY_NEURONS,1); 
 
 % Clear connectivity matrices
 L = length(layer);

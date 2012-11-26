@@ -82,7 +82,7 @@ layer{2}.factor{1} = 50;
 layer{2}.factor{2} = 1;
 
 % Set conduction delay
-layer{1}.delay{1} = 20*rand(EXCITATORY_NEURONS,EXCITATORY_NEURONS);
+layer{1}.delay{1} = floor(20*rand(EXCITATORY_NEURONS,EXCITATORY_NEURONS));
 layer{1}.delay{2} = ones(EXCITATORY_NEURONS,INHIBITORY_NEURONS);
 layer{2}.delay{1} = ones(INHIBITORY_NEURONS,EXCITATORY_NEURONS);
 layer{2}.delay{2} = ones(INHIBITORY_NEURONS, INHIBITORY_NEURONS);
@@ -90,7 +90,7 @@ layer{2}.delay{2} = ones(INHIBITORY_NEURONS, INHIBITORY_NEURONS);
 %%%%%%%%%%% SIMULATION %%%%%%%%%%
 Tmax = 1000;
 Ib = 15;
-Dmax = 25; % maximum propagation delay in milliseconds. The time it takes to go from one neuron to another.
+Dmax = 20; % maximum propagation delay in milliseconds. The time it takes to go from one neuron to another.
 
 % Generate a random time for each neuron to fire
 % A neuron will only background fire once in a second
@@ -108,76 +108,17 @@ for lr=1:length(layer)
 end
 
 for t=1:Tmax
-    
-%    layer{1}.I = zeros(EXCITATORY_NEURONS,1);
-%    layer{2}.I = zeros(INHIBITORY_NEURONS,1);
-%    layer{1}.I(layer{1}.backgroundFire(:)==t) = Ib; 
-%    layer{2}.I(layer{2}.backgroundFire(:)==t) = Ib; 
-%    
-%    if t==1
-%     layer{1}.I = Ib*ones(EXCITATORY_NEURONS,1); % Layer 1 always has a constant input of current 
-%     layer{2}.I = Ib*ones(INHIBITORY_NEURONS,1); % Layer 2 always has a constant input of current
-%    end
-% Deliver a constant base current to layer 1   
-%    layer{1}.I = Ib*ones(EXCITATORY_NEURONS,1); % Layer 1 always has a constant input of current
-%    layer{2}.I = Ib*ones(INHIBITORY_NEURONS,1); % Layer 2 always has a constant input of current
    
    lambda = 0.01;
-   layer{1}.I = Ib*(poissrnd(lambda, EXCITATORY_NEURONS, 1) > 0);
-   layer{2}.I = Ib*(poissrnd(lambda, INHIBITORY_NEURONS, 1) > 0);   
+   layer{1}.I = Ib*poissrnd(lambda, EXCITATORY_NEURONS, 1);
+   layer{2}.I = Ib*poissrnd(lambda, INHIBITORY_NEURONS, 1);   
    
    % Update all the neurons
    for lr=1:length(layer)
       layer = IzNeuronUpdate(layer,lr,t,Dmax); % Takes the neurons, the layer index we want to update, the time, and the propagation delay. It calculates the new v and u values 
    end
    
-    v1(t,1:EXCITATORY_NEURONS) = layer{1}.v;
-    v2(t,1:INHIBITORY_NEURONS) = layer{2}.v;
-
-    u1(t,1:EXCITATORY_NEURONS) = layer{1}.u;
-    u2(t,1:INHIBITORY_NEURONS) = layer{2}.u;
-    
 end
-
-
-firings1 = layer{1}.firings;
-firings2 = layer{2}.firings;
-
-% Add Dirac pulses (mainly for presentation)
-if ~isempty(firings1)
-   v1(sub2ind(size(v1),firings1(:,1),firings1(:,2))) = 30;
-end
-if ~isempty(firings2)
-   v2(sub2ind(size(v2),firings2(:,1),firings2(:,2))) = 30;
-end
-
-%%%%%%%%%% PLOTTING %%%%%%%%%%
-figure(3)
-clf
-
-subplot(2,1,1)
-if ~isempty(firings1)
-   plot(firings1(:,1),firings1(:,2),'.')
-end
-% xlabel('Time (ms)')
-xlim([0 Tmax])
-ylabel('Neuron number')
-ylim([0 800+1])
-set(gca,'YDir','reverse')
-title('Population 1 firings')
-
-subplot(2,1,2)
-if ~isempty(firings2)
-   plot(firings2(:,1),firings2(:,2),'.')
-end
-xlabel('Time (ms)')
-xlim([0 Tmax])
-ylabel('Neuron number')
-ylim([0 200+1])
-set(gca,'YDir','reverse')
-title('Population 2 firings')
-
-drawnow
 
 end
 

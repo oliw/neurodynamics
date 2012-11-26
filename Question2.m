@@ -1,4 +1,4 @@
-function [ output_args ] = Question2( time_series )
+function [ output ] = Question2( time_series )
 %QUESTION2 Calculates neural complexitity, for a set of time series (nvar x
 %nobs data matrix)
 % There is a variable for each module
@@ -7,7 +7,7 @@ function [ output_args ] = Question2( time_series )
 time_series = aks_diff(time_series);
 time_series = aks_diff(time_series);
 
-
+output = complexity(time_series);
 
 end
 

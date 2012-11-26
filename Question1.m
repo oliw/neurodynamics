@@ -1,10 +1,10 @@
 function [layer] = Question1( p )
 %QUESTION1 Summary of this function goes here
 %   Detailed explanation goes here
-% CONSTANTS
 
 % Build small-world modular networks of Izhikevich neurons
 
+% CONSTANTS
 MODULES = 8;
 EXCITATORY_NEURONS_PER_MODULE = 100;
 RANDOM_WIRING_PER_MODULE = 1000;
@@ -56,7 +56,9 @@ for module=1:MODULES
     % Connections between excitatory neurons have weight 1
     layer{1}.S{1}(firstNeuron:lastNeuron,firstNeuron:lastNeuron) = randomWiring(RANDOM_WIRING_PER_MODULE, EXCITATORY_NEURONS_PER_MODULE);
 end
+
 % Rewiring with probability p
+% Therefore inter-connections are established
 layer{1}.S{1} = rewire(layer{1}.S{1}, p, MODULES, EXCITATORY_NEURONS_PER_MODULE);
 
 % Each inhibitory neuron projects to every neuron in the whole network.
@@ -85,9 +87,7 @@ layer{1}.delay{2} = ones(EXCITATORY_NEURONS,INHIBITORY_NEURONS);
 layer{2}.delay{1} = ones(INHIBITORY_NEURONS,EXCITATORY_NEURONS);
 layer{2}.delay{2} = ones(INHIBITORY_NEURONS, INHIBITORY_NEURONS);
 
-
-% SIMULATE
-
+%%%%%%%%%%% SIMULATION %%%%%%%%%%
 Tmax = 1000;
 Ib = 15;
 Dmax = 25; % maximum propagation delay in milliseconds. The time it takes to go from one neuron to another.
@@ -99,6 +99,8 @@ layer{2}.backgroundFire = randi([1,1000], INHIBITORY_NEURONS, 1);
 
 % Initialise layers with intial values of v and u and notes of which are
 % firing
+% v is membrane potential
+% u is recovery variable
 for lr=1:length(layer)
    layer{lr}.v = -65*ones(layer{lr}.rows,layer{lr}.columns); % Every neuron in the layer lr is given an intial voltage of -65
    layer{lr}.u = layer{lr}.b.*layer{lr}.v; % Initial value of u
@@ -116,28 +118,24 @@ for t=1:Tmax
 %     layer{1}.I = Ib*ones(EXCITATORY_NEURONS,1); % Layer 1 always has a constant input of current 
 %     layer{2}.I = Ib*ones(INHIBITORY_NEURONS,1); % Layer 2 always has a constant input of current
 %    end
-   % Deliver a constant base current to layer 1
-   
-   
-   
-   
+% Deliver a constant base current to layer 1   
 %    layer{1}.I = Ib*ones(EXCITATORY_NEURONS,1); % Layer 1 always has a constant input of current
 %    layer{2}.I = Ib*ones(INHIBITORY_NEURONS,1); % Layer 2 always has a constant input of current
    
    lambda = 0.01;
-   layer{1}.I = 15*(poissrnd(lambda, EXCITATORY_NEURONS, 1) > 0);
-   layer{2}.I = 15*(poissrnd(lambda, INHIBITORY_NEURONS, 1) > 0);   
+   layer{1}.I = Ib*(poissrnd(lambda, EXCITATORY_NEURONS, 1) > 0);
+   layer{2}.I = Ib*(poissrnd(lambda, INHIBITORY_NEURONS, 1) > 0);   
    
    % Update all the neurons
    for lr=1:length(layer)
       layer = IzNeuronUpdate(layer,lr,t,Dmax); % Takes the neurons, the layer index we want to update, the time, and the propagation delay. It calculates the new v and u values 
    end
    
-    v1(t,1:800) = layer{1}.v;
-    v2(t,1:200) = layer{2}.v;
+    v1(t,1:EXCITATORY_NEURONS) = layer{1}.v;
+    v2(t,1:INHIBITORY_NEURONS) = layer{2}.v;
 
-    u1(t,1:800) = layer{1}.u;
-    u2(t,1:200) = layer{2}.u;
+    u1(t,1:EXCITATORY_NEURONS) = layer{1}.u;
+    u2(t,1:INHIBITORY_NEURONS) = layer{2}.u;
     
 end
 
@@ -153,6 +151,7 @@ if ~isempty(firings2)
    v2(sub2ind(size(v2),firings2(:,1),firings2(:,2))) = 30;
 end
 
+%%%%%%%%%% PLOTTING %%%%%%%%%%
 figure(3)
 clf
 
@@ -179,7 +178,6 @@ set(gca,'YDir','reverse')
 title('Population 2 firings')
 
 drawnow
-
 
 end
 

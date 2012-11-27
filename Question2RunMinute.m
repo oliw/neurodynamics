@@ -1,4 +1,4 @@
-function [ layer ] = Question2a( p )
+function [ means, layer ] = Question2RunMinute( p )
 %QUESTION1C Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -24,6 +24,7 @@ for t=1:Tmax
     
 end
 
+
 means = zeros(2950, 8);
 
 for d=1:2950
@@ -42,6 +43,7 @@ for d=1:2950
     
 end
 
+
 % Create figure
 figure1 = figure;
 
@@ -54,7 +56,7 @@ box(axes1,'on');
 hold(axes1,'all');
 
 % Create multiple lines using matrix input to plot
-plot(1:2950,means,'Parent',axes1);
+plot(1:2950, means, 'Parent',axes1);
 
 % Create xlabel
 xlabel('Time (ms)');

@@ -1,4 +1,4 @@
-function [layer] = Question1( p )
+function [layer] = Question1( p, Tmax )
 %QUESTION1 Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -88,7 +88,6 @@ layer{2}.delay{1} = ones(INHIBITORY_NEURONS,EXCITATORY_NEURONS);
 layer{2}.delay{2} = ones(INHIBITORY_NEURONS, INHIBITORY_NEURONS);
 
 %%%%%%%%%%% SIMULATION %%%%%%%%%%
-Tmax = 1000;
 Ib = 15;
 Dmax = 20; % maximum propagation delay in milliseconds. The time it takes to go from one neuron to another.
 
@@ -108,7 +107,7 @@ for lr=1:length(layer)
 end
 
 for t=1:Tmax
-   
+    
    lambda = 0.01;
    layer{1}.I = Ib*poissrnd(lambda, EXCITATORY_NEURONS, 1);
    layer{2}.I = Ib*poissrnd(lambda, INHIBITORY_NEURONS, 1);   

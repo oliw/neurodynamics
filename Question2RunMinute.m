@@ -44,28 +44,28 @@ for d=1:2950
 end
 
 
-% Create figure
-figure1 = figure;
-
-% Create axes
-axes1 = axes('Parent',figure1,...
-    'XTickLabel',{'0','100','200','300','400','500','600','700','800','900','1000'});
-%% Uncomment the following line to preserve the X-limits of the axes
-% xlim(axes1,[0 50]);
-box(axes1,'on');
-hold(axes1,'all');
-
-% Create multiple lines using matrix input to plot
-plot(1:2950, means, 'Parent',axes1);
-
-% Create xlabel
-xlabel('Time (ms)');
-
-% Create ylabel
-ylabel('Mean firing rate');
-
-% Create title
-title(sprintf('p = %.2f', p));
+% % Create figure
+% figure1 = figure;
+% 
+% % Create axes
+% axes1 = axes('Parent',figure1,...
+%     'XTickLabel',{'0','100','200','300','400','500','600','700','800','900','1000'});
+% %% Uncomment the following line to preserve the X-limits of the axes
+% % xlim(axes1,[0 50]);
+% box(axes1,'on');
+% hold(axes1,'all');
+% 
+% % Create multiple lines using matrix input to plot
+% plot(1:2950, means, 'Parent',axes1);
+% 
+% % Create xlabel
+% xlabel('Time (ms)');
+% 
+% % Create ylabel
+% ylabel('Mean firing rate');
+% 
+% % Create title
+% title(sprintf('p = %.2f', p));
 
 end
 

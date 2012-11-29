@@ -8,7 +8,6 @@ for r=1:numberOfRuns+1
    
     
    p = 0.05 + (rand(1) * 0.45);
-   
    fprintf('\nStarting run %d with probability %.2f...\n',r , p); 
    
    [ means, layer ] = Question2RunMinute( p );
@@ -19,7 +18,7 @@ for r=1:numberOfRuns+1
    complexity(r, :)
    
    name = sprintf('run%d.mat', r);
-   save(name, complexity);
+   save(name, 'complexity');
     
 end
 

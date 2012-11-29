@@ -18,10 +18,8 @@ function [layer] = Question1( p, Tmax )
 MODULES = 8;
 EXCITATORY_NEURONS_PER_MODULE = 100;
 RANDOM_WIRING_PER_MODULE = 1000;
-
 EXCITATORY_NEURONS = MODULES*EXCITATORY_NEURONS_PER_MODULE;
 INHIBITORY_NEURONS = 200;
-NEURONS = EXCITATORY_NEURONS + INHIBITORY_NEURONS;
 
 % Layer 1 (Exitatory neurons) Regular Spiking
 r = rand(EXCITATORY_NEURONS,1);
@@ -141,29 +139,39 @@ while wiringsMade < n
 end
 end
 
-% Pre: oldmatrix contains just the excitatory modules 
-function matrix = rewire(oldmatrix, p, modules, excitoryNeuronsPerModule)
-matrix = zeros(size(oldmatrix));
-for module=1:modules
-    firstNeuron = (module-1)*excitoryNeuronsPerModule+1;
-    lastNeuron = module*excitoryNeuronsPerModule;
+function newMatrix = rewire(matrix, p, numModules, neuronsPerModule)
+% Performs rewiring between the excitatory modules
+%   INPUTS
+%       matrix - the connectivity matrix before rewiring
+%       p      - the rewiring probability
+%       numModules - the number of modules in the matrix
+%       neuronsPerModule - the number of neurons within each module
+%   OUTPUTS
+%       newMatrix - the new rewired connectivity matrix
+newMatrix = zeros(size(matrix));
+for module=1:numModules % Process each connection in each module
+    firstNeuron = (module-1)*neuronsPerModule+1;
+    lastNeuron = module*neuronsPerModule;
     for i=firstNeuron:lastNeuron
        for j=firstNeuron:lastNeuron
-           if oldmatrix(i,j)==1
+           if matrix(j,i)==1 % Consider rewiring this connection
               if rand <= p
-                 % Rewire edge
-                 edges = 1:800;
-                 edges(firstNeuron:lastNeuron) = [];
-                 while true
-                     newDest = edges(randi([1, size(edges,2)]));
-                     if matrix(newDest, i) == 0
-                        matrix(i,newDest) = 1;
+                 % Rewire the edge from i to j (anchored at i)
+                 % Calculate the possible neurons we could connect to
+                 neurons = 1:800;
+                 neurons(firstNeuron:lastNeuron) = [];
+                 while true % Loop until we find a valid neuron
+                     % Choose a random neuron from neurons
+                     newDest = neurons(randi([1, size(neurons,2)]));
+                     % Only connect i to newDest, if newDest is not 
+                     % connected to i
+                     if newMatrix(i,newDest) == 0
+                        newMatrix(newDest, i) = 1;
                         break;
                      end
                  end
-              else
-                 % Keep unchanged
-                 matrix(i,j) = 1;
+              else % Keep unchanged
+                 newMatrix(j,i) = 1;
               end
            end
        end

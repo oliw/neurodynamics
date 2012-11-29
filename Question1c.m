@@ -1,14 +1,24 @@
 function [ layer ] = Question1c( p )
-%QUESTION1C Summary of this function goes here
-%   Detailed explanation goes here
+%QUESTION1C Generates a plot of the mean firing rate 
+%in each of the eight modules for a 1000ms run
+%
+%   INPUTS
+%       p     - rewiring probability
+%
+%   OUTPUTS
+%       layer - same object as in Tutorial 2
+%             - layer{1} contains all the excitatory neurons
+%             - layer{2} contains all the inhibatory neurons
 
-[ layer ] = Question1(p);
+
+[ layer ] = Question1(p, 1000);
 
 
 firings = layer{1}.firings;
 
 x = zeros(1000, 8);
 
+% COLLECT FIRINGS IN EACH RANGE
 for t=1:1000
  
     x(t, 1) = sum(firings(:, 1) == t & firings(:, 2) <= 100); 
@@ -22,6 +32,7 @@ for t=1:1000
     
 end
 
+% CALCULATE MEANS
 means = zeros(50, 8);
 
 for d=1:50
@@ -39,6 +50,8 @@ for d=1:50
     means(d, 8) = mean(x(bIndex:eIndex, 8));
     
 end
+
+% GENERATE PLOT
 
 % Create figure
 figure1 = figure;

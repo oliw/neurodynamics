@@ -1,6 +1,16 @@
 function [layer] = Question1( p, Tmax )
-%QUESTION1 Summary of this function goes here
-%   Detailed explanation goes here
+%QUESTION1 Builds modular small-world networks and measures their firing.
+%   This function builds and simulates the network described in Topic 9
+%   The output layer contains all the calculated information needed to draw
+%   graphs required for 1a and 1b
+%
+%INPUTS
+%       p - rewiring probability
+%       Tmax - the time in ms to simulate the firings over
+%   OUTPUTS
+%       layer - same object as in Tutorial 2
+%             - layer{1} contains all the excitatory neurons
+%             - layer{2} contains all the inhibatory neurons
 
 % Build small-world modular networks of Izhikevich neurons
 
@@ -12,8 +22,6 @@ RANDOM_WIRING_PER_MODULE = 1000;
 EXCITATORY_NEURONS = MODULES*EXCITATORY_NEURONS_PER_MODULE;
 INHIBITORY_NEURONS = 200;
 NEURONS = EXCITATORY_NEURONS + INHIBITORY_NEURONS;
-
-% Build two layer structure
 
 % Layer 1 (Exitatory neurons) Regular Spiking
 r = rand(EXCITATORY_NEURONS,1);
@@ -49,7 +57,6 @@ layer{2}.S{1} = zeros(INHIBITORY_NEURONS, EXCITATORY_NEURONS);
 
 % Each module contains 1000 randomly assigned directed inner connections (before
 % rewiring)
-% TODO Some neurons may be completely cut off, is this ok?
 for module=1:MODULES
     firstNeuron = (module-1)*EXCITATORY_NEURONS_PER_MODULE+1;
     lastNeuron = module*EXCITATORY_NEURONS_PER_MODULE;
@@ -91,11 +98,6 @@ layer{2}.delay{2} = ones(INHIBITORY_NEURONS, INHIBITORY_NEURONS);
 Ib = 15;
 Dmax = 20; % maximum propagation delay in milliseconds. The time it takes to go from one neuron to another.
 
-% Generate a random time for each neuron to fire
-% A neuron will only background fire once in a second
-layer{1}.backgroundFire = randi([1, 1000], EXCITATORY_NEURONS,1);
-layer{2}.backgroundFire = randi([1,1000], INHIBITORY_NEURONS, 1);
-
 % Initialise layers with intial values of v and u and notes of which are
 % firing
 % v is membrane potential
@@ -121,10 +123,13 @@ end
 
 end
 
-function module = randomWiring(numOfWirings, size)
+function module = randomWiring(n, size)
+% This helper function builds a random connectivity matrix of size sizexsize
+% The matrix contains n wirings
+% There cannot be any bidirection arcs between nodes
 module = zeros(size);
 wiringsMade = 0;
-while wiringsMade < numOfWirings
+while wiringsMade < n
     randomI = randi([1, size]);
     randomJ = randi([1, size]);
     if randomI ~= randomJ
